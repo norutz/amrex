@@ -4,11 +4,17 @@ using namespace amrex;
 
 extern "C"
 {
-    void amrex_fi_new_geometry (Geometry*& geom, int lo[3], int hi[3])
+    void amrex_fi_new_geometry (Geometry*& geom, int lo[3], int hi[3], Real* problo = nullptr, Real* probhi = nullptr)
     {
         const Box domain{IntVect{AMREX_D_DECL(lo[0],lo[1],lo[2])},
                          IntVect{AMREX_D_DECL(hi[0],hi[1],hi[2])}};
-        geom = new Geometry(domain);
+        if(problo && probhi){
+            const RealBox real_box(AMREX_D_DECL(problo[0],problo[1],problo[2]), AMREX_D_DECL(probhi[0],probhi[1],probhi[2]));
+            geom = new Geometry(domain, &real_box);
+        }
+        else{
+            geom = new Geometry(domain);
+        }
     }
 
     void amrex_fi_delete_geometry (Geometry* geom)
