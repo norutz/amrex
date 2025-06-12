@@ -125,11 +125,21 @@ contains
     call amrex_fi_geometry_get_probdomain(amrex_problo, amrex_probhi)
   end subroutine amrex_geometry_init
 
-  subroutine amrex_geometry_build (geom, domain)
+  subroutine amrex_geometry_build (geom, domain, is_periodic)
     type(amrex_geometry) :: geom
     type(amrex_box), intent(in) :: domain
+    integer, intent(in) :: is_periodic(3)
+    real(amrex_real), intent(in), optional :: problo(3), probhi(3)
     geom%owner = .true.
-    call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi)
+    if(present(problo) .and. present(probhi) .and. is_periodic) then
+      call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi, problo, probhi, is_periodic)
+    else if(present (is_periodic))
+      call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi)
+    else if(present(problo) .and. present(probhi))
+      call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi, problo, probhi)
+    else
+      amrex_fi_new_geometry(geom%p, domain%lo, domain%hi)
+    endif
     call amrex_geometry_init_data(geom)
   end subroutine amrex_geometry_build
 
