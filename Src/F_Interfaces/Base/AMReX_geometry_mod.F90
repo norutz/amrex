@@ -43,11 +43,13 @@ module amrex_geometry_module
   ! interfaces to c++ functions
 
   interface
-     subroutine amrex_fi_new_geometry (geom,lo,hi) bind(c)
+     subroutine amrex_fi_new_geometry (geom,lo,hi,is_periodic,problo,probhi) bind(c)
        import
        implicit none
        type(c_ptr) :: geom
        integer, intent(in) :: lo(3), hi(3)
+       integer, intent(in), optional :: is_periodic(3)
+       real(amrex_real), intent(in), optional :: problo(3), probhi(3)
      end subroutine amrex_fi_new_geometry
 
      subroutine amrex_fi_delete_geometry (geom) bind(c)
@@ -125,20 +127,20 @@ contains
     call amrex_fi_geometry_get_probdomain(amrex_problo, amrex_probhi)
   end subroutine amrex_geometry_init
 
-  subroutine amrex_geometry_build (geom, domain, is_periodic)
+  subroutine amrex_geometry_build (geom, domain, is_periodic, problo, probhi)
     type(amrex_geometry) :: geom
     type(amrex_box), intent(in) :: domain
-    integer, intent(in) :: is_periodic(3)
+    integer, intent(in), optional :: is_periodic(3)
     real(amrex_real), intent(in), optional :: problo(3), probhi(3)
     geom%owner = .true.
-    if(present(problo) .and. present(probhi) .and. is_periodic) then
-      call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi, problo, probhi, is_periodic)
-    else if(present (is_periodic))
+    if(present(problo) .and. present(probhi) .and. present(is_periodic)) then
+      call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi, is_periodic, problo, probhi)
+    else if(present (is_periodic)) then
       call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi)
-    else if(present(problo) .and. present(probhi))
-      call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi, problo, probhi)
+    else if(present(problo) .and. present(probhi)) then
+      call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi, [0,0,0], problo, probhi)
     else
-      amrex_fi_new_geometry(geom%p, domain%lo, domain%hi)
+      call amrex_fi_new_geometry(geom%p, domain%lo, domain%hi)
     endif
     call amrex_geometry_init_data(geom)
   end subroutine amrex_geometry_build
